@@ -17,7 +17,7 @@ Video;
 SDL_Texture* background;
 SDL_Texture* sprite;
 
-SDL_Rect* rectangle;
+SDL_FRect* rectangle;
 
 static void quit(const char* const message, ...)
 {
@@ -74,7 +74,7 @@ static void cleanup()
 }
 
 // ugly code but I'm a C++ programmer, not C
-int scaleRes(int val, int isY)
+float scaleRes(float val, int isY)
 {
     float defaultRes = 1920;
     float actualRes = xRes;
@@ -92,10 +92,10 @@ static void parseArgs(int argc, char** argv, Video* video)
     if(argc < 3)
         quit("Usage: paperview background.bmp sprite.bmp\n");
 
-    SDL_Rect* rect = malloc(sizeof(*rect));
-    rect->x = scaleRes(760, False);
-    rect->w = scaleRes(400, False);
-    rect->h = scaleRes(400, True);
+    SDL_FRect* rect = malloc(sizeof(*rect));
+    rect->x = scaleRes(760.0f, False);
+    rect->w = scaleRes(400.0f, False);
+    rect->h = scaleRes(400.0f, True);
     cacheTextures(argv[1], argv[2], video->renderer);
     rectangle = rect;
 }
@@ -109,9 +109,9 @@ int main(int argc, char** argv)
         // render
         SDL_RenderCopy(video.renderer, background, NULL, NULL);
 
-        rectangle->y = scaleRes((int) (440 + sin((double)cycles / 200.0f) * 50.0f), True); // oscillate slowly between 390 and 490
-        SDL_RenderCopy(video.renderer, sprite, NULL, rectangle);
-
+        rectangle->y = scaleRes(440.0f + sin(cycles / 200.0f) * 50.0f, True); // oscillate slowly between 390 and 490
+        SDL_RenderCopyF(video.renderer, sprite, NULL, rectangle);
+        
         SDL_RenderPresent(video.renderer);
         SDL_Event event;
         SDL_PollEvent(&event);
