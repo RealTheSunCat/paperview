@@ -5,34 +5,16 @@
 
 typedef struct
 {
-    char** path;
-    unsigned size;
-}
-Paths;
-
-typedef struct
-{
-    SDL_Texture** texture;
-    unsigned size;
-}
-Textures;
-
-typedef struct View
-{
-    int speed;
-    Textures textures;
-    SDL_Rect* rect;
-    struct View* next;
-}
-View;
-
-typedef struct
-{
     Display* x11d;
     SDL_Window* window;
     SDL_Renderer* renderer;
 }
 Video;
+
+SDL_Texture* background;
+SDL_Texture* sprite;
+
+SDL_Rect* rectangle;
 
 static void Quit(const char* const message, ...)
 {
@@ -43,93 +25,39 @@ static void Quit(const char* const message, ...)
     exit(1);
 }
 
-static int Compare(const void* a, const void* b)
+static void CacheTextures(const char* bgPath, const char* spritePath, SDL_Renderer* renderer)
 {
-    char* const pa = *(char**) a;
-    char* const pb = *(char**) b;
-    const unsigned la = strlen(pa);
-    const unsigned lb = strlen(pb);
-    return (la > lb) ? 1 : (la < lb) ? -1 : strcmp(pa, pb);
-}
-
-static void Sort(Paths* self)
-{
-    qsort(self->path, self->size, sizeof(*self->path), Compare);
-}
-
-static Paths Populate(const char* base)
-{
-    DIR* const dir = opendir(base);
-    if(dir == NULL)
-        Quit("Directory '%s' failed to open\n", base);
-    unsigned max = 8;
-    Paths self;
-    self.size = 0;
-    self.path = malloc(max * sizeof(*self.path));
-    for(struct dirent* entry; (entry = readdir(dir));)
     {
-        const char* const path = entry->d_name;
-        if(strstr(path, ".bmp"))
-        {
-            char* const slash = "/";
-            char* const buffer = malloc(strlen(base) + strlen(slash) + strlen(path) + 1);
-            strcpy(buffer, base);
-            strcat(buffer, slash);
-            strcat(buffer, path);
-            if(self.size == max)
-            {
-                max *= 2;
-                self.path = realloc(self.path, max * sizeof(*self.path));
-            }
-            self.path[self.size] = buffer;
-            self.size += 1;
-        }
-    }
-    closedir(dir);
-    Sort(&self);
-    return self;
-}
-
-static void Depopulate(Paths* self)
-{
-    for(unsigned i = 0; i < self->size; i++)
-        free(self->path[i]);
-    free(self->path);
-}
-
-static Textures Cache(Paths* paths, SDL_Renderer* renderer)
-{
-    Textures self;
-    self.size = paths->size;
-    self.texture = malloc(self.size * sizeof(*self.texture));
-    for(unsigned i = 0; i < self.size; i++)
-    {
-        const char* const path = paths->path[i];
-        SDL_Surface* const surface = SDL_LoadBMP(path);
+        SDL_Surface* const surface = SDL_LoadBMP(bgPath);
         if(surface == NULL)
-            Quit("File '%s' failed to open. %s\n", path, SDL_GetError());
-        self.texture[i] = SDL_CreateTextureFromSurface(renderer, surface);
+            Quit("Background file failed to open: %s\n", SDL_GetError());
+        background = SDL_CreateTextureFromSurface(renderer, surface);
         SDL_FreeSurface(surface);
     }
-    return self;
+    {
+        SDL_Surface* const surface = SDL_LoadBMP(spritePath);
+        if(surface == NULL)
+            Quit("Sprite file failed to open: %s\n", SDL_GetError());
+        sprite = SDL_CreateTextureFromSurface(renderer, surface);
+        SDL_FreeSurface(surface);
+    }
 }
 
-static void Destroy(Textures* self)
+static void DestroyTextures()
 {
-    for(unsigned i = 0; i < self->size; i++)
-        SDL_DestroyTexture(self->texture[i]);
-    free(self->texture);
+    SDL_DestroyTexture(background);
+    SDL_DestroyTexture(sprite);
 }
 
 static Video Setup(void)
 {
-    Video self;
-    self.x11d = XOpenDisplay(NULL);
-    const Window x11w = RootWindow(self.x11d, DefaultScreen(self.x11d));
+    Video video;
+    video.x11d = XOpenDisplay(NULL);
+    const Window x11w = RootWindow(video.x11d, DefaultScreen(video.x11d));
     SDL_Init(SDL_INIT_VIDEO);
-    self.window = SDL_CreateWindowFrom((void*) x11w);
-    self.renderer = SDL_CreateRenderer(self.window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
-    return self;
+    video.window = SDL_CreateWindowFrom((void*) x11w);
+    video.renderer = SDL_CreateRenderer(video.window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
+    return video;
 }
 
 static void Teardown(Video* self)
@@ -142,13 +70,8 @@ static void Teardown(Video* self)
 
 static View* Init(const char* const base, const int speed, SDL_Rect* rect, Video* video)
 {
-    View* self = malloc(sizeof(*self));
-    self->speed = speed;
-    Paths paths = Populate(base);
-    self->textures = Cache(&paths, video->renderer);
-    self->rect = rect;
-    Depopulate(&paths);
-    self->next = NULL;
+    CacheTextures(&paths, video->renderer);
+    rectangle = rect;
     return self;
 }
 
