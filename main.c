@@ -68,12 +68,6 @@ static void Teardown(Video* self)
     SDL_DestroyRenderer(self->renderer);
 }
 
-static void Init(const char* bgPath, const char* spritePath, SDL_Rect* rect, Video* video)
-{
-    CacheTextures(bgPath, spritePath, video->renderer);
-    rectangle = rect;
-}
-
 static void Cleanup()
 {
     DestroyTextures();
@@ -94,7 +88,8 @@ static void ParseArgs(int argc, char** argv, Video* video)
         rect->w = atoi(argv[e]);
         rect->h = atoi(argv[f]);
     }*/
-    Init(argv[1], argv[1], rect, video);
+    CacheTextures(argv[1], argv[2], video->renderer);
+    rectangle = rect;
 }
 
 int main(int argc, char** argv)
@@ -105,7 +100,7 @@ int main(int argc, char** argv)
     {
         // render
         SDL_RenderCopy(video.renderer, background, NULL, rectangle);
-        // TODO render sprite
+        SDL_RenderCopy(video.renderer, sprite, NULL, rectangle);
 
         SDL_RenderPresent(video.renderer);
         SDL_Event event;
@@ -113,7 +108,7 @@ int main(int argc, char** argv)
         if(event.type == SDL_QUIT)
             break;
     }
-    
+
     Cleanup();
     Teardown(&video);
 }
