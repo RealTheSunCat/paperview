@@ -93,9 +93,9 @@ static void parseArgs(int argc, char** argv, Video* video)
         quit("Usage: paperview background.bmp sprite.bmp\n");
 
     SDL_FRect* rect = malloc(sizeof(*rect));
-    rect->x = scaleRes(760.0f, False);
-    rect->w = scaleRes(400.0f, False);
-    rect->h = scaleRes(400.0f, True);
+    rect->x = scaleRes(710.0f, False);
+    rect->w = scaleRes(500.0f, False);
+    rect->h = scaleRes(500.0f, True);
     cacheTextures(argv[1], argv[2], video->renderer);
     rectangle = rect;
 }
@@ -109,7 +109,7 @@ int main(int argc, char** argv)
         // render
         SDL_RenderCopy(video.renderer, background, NULL, NULL);
 
-        rectangle->y = scaleRes(440.0f + sin(cycles / 200.0f) * 50.0f, True); // oscillate slowly between 390 and 490
+        rectangle->y = scaleRes(380.0f + sin(cycles / 200.0f) * 30.0f, True); // oscillate
         SDL_RenderCopyF(video.renderer, sprite, NULL, rectangle);
         
         SDL_RenderPresent(video.renderer);
