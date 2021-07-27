@@ -4,6 +4,8 @@
 #include <stdarg.h>
 #include <math.h>
 
+const int xRes = 1920; const int yRes = 1080;
+
 typedef struct
 {
     Display* x11d;
@@ -74,15 +76,29 @@ static void Cleanup()
     DestroyTextures();
 }
 
+// ugly code but I'm a C++ programmer, not C
+int scaleRes(int val, int isY)
+{
+    float defaultRes = 1920;
+    float actualRes = xRes;
+    if(isY)
+    {
+        defaultRes = 1080;
+        actualRes = yRes;
+    }
+
+    return ((float) val) * (((float) actualRes) / defaultRes);
+}
+
 static void ParseArgs(int argc, char** argv, Video* video)
 {
     if(argc < 3)
         Quit("Usage: paperview background.bmp sprite.bmp\n");
 
     SDL_Rect* rect = malloc(sizeof(*rect));
-    rect->x = 760;
-    rect->w = 400;
-    rect->h = 400;
+    rect->x = scaleRes(760, False);
+    rect->w = scaleRes(400, False);
+    rect->h = scaleRes(400, True);
     CacheTextures(argv[1], argv[2], video->renderer);
     rectangle = rect;
 }
@@ -96,7 +112,7 @@ int main(int argc, char** argv)
         // render
         SDL_RenderCopy(video.renderer, background, NULL, NULL);
 
-        rectangle->y = 440 + sin((double)cycles / 200.0f) * 50.0f; // oscillate slowly between 390 and 490
+        rectangle->y = scaleRes((int) (440 + sin((double)cycles / 200.0f) * 50.0f), True); // oscillate slowly between 390 and 490
         SDL_RenderCopy(video.renderer, sprite, NULL, rectangle);
 
         SDL_RenderPresent(video.renderer);
