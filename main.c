@@ -68,87 +68,52 @@ static void Teardown(Video* self)
     SDL_DestroyRenderer(self->renderer);
 }
 
-static View* Init(const char* const base, const int speed, SDL_Rect* rect, Video* video)
+static void Init(const char* bgPath, const char* spritePath, SDL_Rect* rect, Video* video)
 {
-    CacheTextures(&paths, video->renderer);
+    CacheTextures(bgPath, spritePath, video->renderer);
     rectangle = rect;
-    return self;
 }
 
-static View* Push(View* views, View* view)
+static void Cleanup()
 {
-    view->next = views;
-    return view;
+    DestroyTextures();
 }
 
-static void Cleanup(View* views)
+static void ParseArgs(int argc, char** argv, Video* video)
 {
-    View* view = views;
-    while(view)
+    if(argc < 3)
+        Quit("Usage: paperview background.bmp sprite.bmp\n");
+
+    SDL_Rect* rect = NULL;
+    /*
+    if(c != argc)
     {
-        View* next = view->next;
-        Destroy(&view->textures);
-        free(view->rect);
-        free(view);
-        view = next;
-    }
-}
-
-static View* Parse(int argc, char** argv, Video* video)
-{
-    const int args = argc - 1;
-    if(args < 2)
-        Quit("Usage: paperview FOLDER SPEED\n"); // LEGACY PARAMETER SUPPORT.
-    const int params = 6;
-    if(args > 2 && args % params != 0)
-        Quit("Usage: paperview FOLDER SPEED X Y W H FOLDER SPEED X Y W H # ... And so on\n"); // MULTI-MONITOR PARAMETER SUPPORT.
-    View* views = NULL;
-    for(int i = 1; i < argc; i += params)
-    {
-        const int a = i + 0;
-        const int b = i + 1;
-        const int c = i + 2;
-        const int d = i + 3;
-        const int e = i + 4;
-        const int f = i + 5;
-        const char* const base = argv[a];
-        int speed = atoi(argv[b]);
-        if(speed == 0)
-            Quit("Invalid speed value\n");
-        if(speed < 0)
-            speed = INT32_MAX; // NEGATIVE SPEED VALUES CREATE STILL WALLPAPERS.
-        SDL_Rect* rect = NULL;
-        if(c != argc)
-        {
-            rect = malloc(sizeof(*rect));
-            rect->x = atoi(argv[c]);
-            rect->y = atoi(argv[d]);
-            rect->w = atoi(argv[e]);
-            rect->h = atoi(argv[f]);
-        }
-        views = Push(views, Init(base, speed, rect, video));
-    }
-    return views;
+        rect = malloc(sizeof(*rect));
+        rect->x = atoi(argv[c]);
+        rect->y = atoi(argv[d]);
+        rect->w = atoi(argv[e]);
+        rect->h = atoi(argv[f]);
+    }*/
+    Init(argv[1], argv[1], rect, video);
 }
 
 int main(int argc, char** argv)
 {
     Video video = Setup();
-    View* views = Parse(argc, argv, &video);
+    ParseArgs(argc, argv, &video);
     for(int cycles = 0; /* true */; cycles++)
     {
-        for(View* view = views; view; view = view->next)
-        {
-            const int index = cycles / view->speed;
-            const int frame = index % view->textures.size;
-            SDL_RenderCopy(video.renderer, view->textures.texture[frame], NULL, view->rect);
-        }
+        // render
+        SDL_RenderCopy(video.renderer, background, NULL, rectangle);
+        // TODO render sprite
+
         SDL_RenderPresent(video.renderer);
         SDL_Event event;
         SDL_PollEvent(&event);
         if(event.type == SDL_QUIT)
             break;
     }
-    Cleanup(views);
+    
+    Cleanup();
     Teardown(&video);
 }
