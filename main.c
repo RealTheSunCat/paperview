@@ -100,16 +100,41 @@ static void parseArgs(int argc, char** argv, Video* video)
     rectangle = rect;
 }
 
+float ease(float time, float startValue, float change, float duration) {
+     time /= duration / 2;
+     if (time < 1)  {
+          return change / 2 * time * time + startValue;
+     }
+
+     time--;
+     return -change / 2 * (time * (time - 2) - 1) + startValue;
+ }
+
+
 int main(int argc, char** argv)
 {
     Video video = setup();
     parseArgs(argc, argv, &video);
+
+    int animLength = 300; // 5s at 60fps
     for(int cycles = 0; /* true */; cycles++)
     {
         // render
         SDL_RenderCopy(video.renderer, background, NULL, NULL);
 
-        rectangle->y = scaleRes(380.0f + sin(cycles / 200.0f) * 30.0f, True); // oscillate
+        // emulate CSS anim
+        int animTime = cycles % animLength;
+
+        if(animTime >= 0 && animTime < 0.5*animLength)
+        {
+            rectangle->y = ease(animTime, 0, -20, 0.5*animLength);
+        } else { // animTime > 0.5*animLength
+            rectangle->y = ease(animTime - 0.5*animLength, -20, 20, 0.5*animLength);
+        }
+
+        rectangle->y += 540 - 250; // center
+        rectangle->y = scaleRes(rectangle->y, True); // scale for screen res
+
         SDL_RenderCopyF(video.renderer, sprite, NULL, rectangle);
         
         SDL_RenderPresent(video.renderer);
