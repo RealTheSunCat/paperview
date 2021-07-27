@@ -19,7 +19,7 @@ SDL_Texture* sprite;
 
 SDL_Rect* rectangle;
 
-static void Quit(const char* const message, ...)
+static void quit(const char* const message, ...)
 {
     va_list args;
     va_start(args, message);
@@ -28,31 +28,26 @@ static void Quit(const char* const message, ...)
     exit(1);
 }
 
-static void CacheTextures(const char* bgPath, const char* spritePath, SDL_Renderer* renderer)
+static void cacheTextures(const char* bgPath, const char* spritePath, SDL_Renderer* renderer)
 {
+    // this should be a func but ah well
     {
         SDL_Surface* const surface = SDL_LoadBMP(bgPath);
         if(surface == NULL)
-            Quit("Background file failed to open: %s\n", SDL_GetError());
+            quit("Background file failed to open: %s\n", SDL_GetError());
         background = SDL_CreateTextureFromSurface(renderer, surface);
         SDL_FreeSurface(surface);
     }
     {
         SDL_Surface* const surface = SDL_LoadBMP(spritePath);
         if(surface == NULL)
-            Quit("Sprite file failed to open: %s\n", SDL_GetError());
+            quit("Sprite file failed to open: %s\n", SDL_GetError());
         sprite = SDL_CreateTextureFromSurface(renderer, surface);
         SDL_FreeSurface(surface);
     }
 }
 
-static void DestroyTextures()
-{
-    SDL_DestroyTexture(background);
-    SDL_DestroyTexture(sprite);
-}
-
-static Video Setup(void)
+static Video setup(void)
 {
     Video video;
     video.x11d = XOpenDisplay(NULL);
@@ -63,7 +58,7 @@ static Video Setup(void)
     return video;
 }
 
-static void Teardown(Video* self)
+static void teardown(Video* self)
 {
     XCloseDisplay(self->x11d);
     SDL_Quit();
@@ -71,9 +66,11 @@ static void Teardown(Video* self)
     SDL_DestroyRenderer(self->renderer);
 }
 
-static void Cleanup()
+static void cleanup()
 {
-    DestroyTextures();
+    SDL_DestroyTexture(background);
+    SDL_DestroyTexture(sprite);
+    free(rectangle);
 }
 
 // ugly code but I'm a C++ programmer, not C
@@ -90,23 +87,23 @@ int scaleRes(int val, int isY)
     return ((float) val) * (((float) actualRes) / defaultRes);
 }
 
-static void ParseArgs(int argc, char** argv, Video* video)
+static void parseArgs(int argc, char** argv, Video* video)
 {
     if(argc < 3)
-        Quit("Usage: paperview background.bmp sprite.bmp\n");
+        quit("Usage: paperview background.bmp sprite.bmp\n");
 
     SDL_Rect* rect = malloc(sizeof(*rect));
     rect->x = scaleRes(760, False);
     rect->w = scaleRes(400, False);
     rect->h = scaleRes(400, True);
-    CacheTextures(argv[1], argv[2], video->renderer);
+    cacheTextures(argv[1], argv[2], video->renderer);
     rectangle = rect;
 }
 
 int main(int argc, char** argv)
 {
-    Video video = Setup();
-    ParseArgs(argc, argv, &video);
+    Video video = setup();
+    parseArgs(argc, argv, &video);
     for(int cycles = 0; /* true */; cycles++)
     {
         // render
@@ -122,6 +119,6 @@ int main(int argc, char** argv)
             break;
     }
 
-    Cleanup();
-    Teardown(&video);
+    cleanup();
+    teardown(&video);
 }
