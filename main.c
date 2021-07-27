@@ -2,6 +2,7 @@
 #include <X11/Xlib.h>
 #include <dirent.h>
 #include <stdarg.h>
+#include <math.h>
 
 typedef struct
 {
@@ -78,16 +79,10 @@ static void ParseArgs(int argc, char** argv, Video* video)
     if(argc < 3)
         Quit("Usage: paperview background.bmp sprite.bmp\n");
 
-    SDL_Rect* rect = NULL;
-    /*
-    if(c != argc)
-    {
-        rect = malloc(sizeof(*rect));
-        rect->x = atoi(argv[c]);
-        rect->y = atoi(argv[d]);
-        rect->w = atoi(argv[e]);
-        rect->h = atoi(argv[f]);
-    }*/
+    SDL_Rect* rect = malloc(sizeof(*rect));
+    rect->x = 760;
+    rect->w = 400;
+    rect->h = 400;
     CacheTextures(argv[1], argv[2], video->renderer);
     rectangle = rect;
 }
@@ -99,7 +94,9 @@ int main(int argc, char** argv)
     for(int cycles = 0; /* true */; cycles++)
     {
         // render
-        SDL_RenderCopy(video.renderer, background, NULL, rectangle);
+        SDL_RenderCopy(video.renderer, background, NULL, NULL);
+
+        rectangle->y = 440 + sin((double)cycles / 200.0f) * 50.0f; // oscillate slowly between 390 and 490
         SDL_RenderCopy(video.renderer, sprite, NULL, rectangle);
 
         SDL_RenderPresent(video.renderer);
