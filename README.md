@@ -8,6 +8,10 @@ This is a fork of Paperview aiming to imitate the following Wallpaper Engine wal
 
     make # NOTE: SDL2 is required
 
+## Install
+
+    make install
+
 ## Single Monitor Use
 
     ./paperview background.bmp sprite.bmp
@@ -16,7 +20,7 @@ This is a fork of Paperview aiming to imitate the following Wallpaper Engine wal
 
 Append an (&) to a paperview command to have it run as a background process. Eg:
 
-    ./paperview FOLDER SPEED &
+    ./paperview background.bmp sprite.bmp &
 
 To stop this backgroud process, use `killall`:
 
