@@ -2,7 +2,7 @@
 
 This is a fork of Paperview aiming to imitate the following Wallpaper Engine wallpaper: https://steamcommunity.com/sharedfiles/filedetails/?l=latam&id=1439758130
 
-![](screenshot.png)
+![](Celeste.gif)
 
 ## Build
 
