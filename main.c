@@ -1,4 +1,6 @@
 #include <SDL2/SDL.h>
+#include <SDL2/SDL_events.h>
+#include <SDL2/SDL_pixels.h>
 #include <X11/Xlib.h>
 #include <dirent.h>
 #include <stdarg.h>
@@ -28,23 +30,16 @@ static void quit(const char* const message, ...)
     exit(1);
 }
 
-static void cacheTextures(const char* bgPath, const char* spritePath, SDL_Renderer* renderer)
+static SDL_Texture* cacheTexture(const char* path, SDL_Renderer* renderer)
 {
-    // this should be a func but ah well
-    {
-        SDL_Surface* const surface = SDL_LoadBMP(bgPath);
-        if(surface == NULL)
-            quit("Background file failed to open: %s\n", SDL_GetError());
-        background = SDL_CreateTextureFromSurface(renderer, surface);
-        SDL_FreeSurface(surface);
-    }
-    {
-        SDL_Surface* const surface = SDL_LoadBMP(spritePath);
-        if(surface == NULL)
-            quit("Sprite file failed to open: %s\n", SDL_GetError());
-        sprite = SDL_CreateTextureFromSurface(renderer, surface);
-        SDL_FreeSurface(surface);
-    }
+
+    SDL_Surface* const surface = SDL_LoadBMP(path);
+    if(surface == NULL)
+        quit("File failed to open: %s. Error: %s\n", path, SDL_GetError());
+    SDL_Texture* tex = SDL_CreateTextureFromSurface(renderer, surface);
+    SDL_FreeSurface(surface);
+
+    return tex;
 }
 
 static Video setup(void)
@@ -54,7 +49,8 @@ static Video setup(void)
     const Window x11w = RootWindow(video.x11d, DefaultScreen(video.x11d));
     SDL_Init(SDL_INIT_VIDEO);
     video.window = SDL_CreateWindowFrom((void*) x11w);
-    video.renderer = SDL_CreateRenderer(video.window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
+    video.renderer = SDL_CreateRenderer(video.window, -1, SDL_RENDERER_ACCELERATED);// | SDL_RENDERER_PRESENTVSYNC); maybe reduce power usage?
+    
     return video;
 }
 
@@ -84,7 +80,7 @@ float scaleRes(float val, int isY)
         actualRes = yRes;
     }
 
-    return ((float) val) * (((float) actualRes) / defaultRes);
+    return val * (actualRes / defaultRes);
 }
 
 static void parseArgs(int argc, char** argv, Video* video)
@@ -96,8 +92,10 @@ static void parseArgs(int argc, char** argv, Video* video)
     rect->x = scaleRes(710.0f, False);
     rect->w = scaleRes(500.0f, False);
     rect->h = scaleRes(500.0f, True);
-    cacheTextures(argv[1], argv[2], video->renderer);
     rectangle = rect;
+
+    background = cacheTexture(argv[1], video->renderer);
+    sprite = cacheTexture(argv[2], video->renderer);
 }
 
 float ease(float time, float startValue, float change, float duration) {
@@ -116,7 +114,7 @@ int main(int argc, char** argv)
     Video video = setup();
     parseArgs(argc, argv, &video);
 
-    int animLength = 300; // 5s at 60fps
+    int animLength = 156; // 5s at 30fps
     for(int cycles = 0; /* true */; cycles++)
     {
         // render
@@ -142,6 +140,8 @@ int main(int argc, char** argv)
         SDL_PollEvent(&event);
         if(event.type == SDL_QUIT)
             break;
+
+        SDL_Delay(32); // reduce power usage
     }
 
     cleanup();
